@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Room: {{ room_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-3xl p-6 bg-white rounded-xl shadow-lg">
+    <!-- Room Heading -->
+    <div class="mb-6 text-center">
+      <h1 class="text-3xl font-bold text-blue-600">💬 Chat Room: {{ room_name }}</h1>
+      <h2 class="text-lg mt-1 text-gray-700">Welcome, <span class="font-semibold">{{ username }}</span></h2>
+    </div>
+
+    <!-- Chat History -->
+    <div id="chat-log" class="border border-gray-300 p-4 rounded-lg h-64 overflow-y-scroll bg-gray-50 mb-4 text-sm">
+      {% for message in messages %}
+        <p><strong>{{ message.user.username }}:</strong> {{ message.content }}</p>
+      {% endfor %}
+    </div>
+
+    <!-- Typing Indicator -->
+    <p id="typing-indicator" class="text-sm italic text-gray-500 mb-2 h-4"></p>
+
+    <!-- Chat Input -->
+    <div class="flex gap-2 mb-6">
+      <input id="chat-message-input" type="text" autocomplete="off"
+             placeholder="Type your message..."
+             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button id="chat-message-submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+        Send
+      </button>
+    </div>
+
+    <!-- Online Users -->
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2">Users in this room:</h3>
+      <ul id="user-list" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    </div>
+
+    <!-- Logout -->
+    <form method="post" action="{% url 'logout' %}" class="text-center">
+      {% csrf_token %}
+      <button type="submit"
+              class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+        Logout
+      </button>
+    </form>
+  </div>
+
+  <!-- WebSocket JS -->
+  <script>
+    const roomName = "{{ room_name }}";
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+    );
+
+    chatSocket.onopen = () => console.log("✅ WebSocket connected");
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log("[WebSocket] message received:", data);
+
+        if (data.type === 'chat') {
+            const chatLog = document.getElementById('chat-log');
+            const newMsg = document.createElement('p');
+            newMsg.textContent = data.message;
+            chatLog.appendChild(newMsg);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        if (data.type === 'users') {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            data.users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = user;
+                userList.appendChild(li);
+            });
+        }
+
+        if (data.type === 'typing') {
+            const typingIndicator = document.getElementById('typing-indicator');
+            typingIndicator.textContent = `${data.username} is typing...`;
+
+            clearTimeout(window.typingTimeout);
+            window.typingTimeout = setTimeout(() => {
+                typingIndicator.textContent = '';
+            }, 2000);
+        }
+    };
+
+    // Send message
+    document.querySelector('#chat-message-submit').onclick = function(e) {
+        const input = document.querySelector('#chat-message-input');
+        const message = input.value;
+
+        if (chatSocket.readyState === WebSocket.OPEN && message.trim() !== '') {
+            chatSocket.send(JSON.stringify({ type: 'chat', message: message }));
+            input.value = '';
+        } else if (message.trim() === '') {
+            alert("Cannot send empty message.");
+        } else {
+            alert("WebSocket not connected.");
+        }
+    };
+
+    // Typing event
+    document.getElementById('chat-message-input').addEventListener('input', function () {
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'typing' }));
+        }
+    });
+  </script>
+</body>
+</html>
