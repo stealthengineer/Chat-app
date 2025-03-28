@@ -50,6 +50,14 @@
       <ul id="user-list" class="list-disc list-inside text-sm text-gray-800 space-y-1"></ul>
     </div>
 
+    <!-- Back to Lobby -->
+    <form action="{% url 'index' %}" method="get" class="text-center mt-4">
+        <button type="submit"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold transition">
+        ← Back to Lobby
+        </button>
+    </form>
+
     <!-- Logout -->
     <form method="post" action="{% url 'logout' %}" class="text-center mt-4">
         {% csrf_token %}
@@ -58,6 +66,8 @@
         🔒 Logout
         </button>
     </form>
+
+
 
     <!-- Show Delete Button Only to Creator -->
     {% if can_delete %}
