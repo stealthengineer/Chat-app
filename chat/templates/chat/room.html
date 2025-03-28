@@ -70,8 +70,9 @@
   <!-- WebSocket & Chat Script -->
   <script>
     const roomName = "{{ room_name }}";
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const chatSocket = new WebSocket(
-      'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+    `${protocol}://${window.location.host}/ws/chat/${roomName}/`
     );
 
     chatSocket.onopen = () => {
