@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-&ja-+o3_t(lk%hg87-cin8%22n$v!0nv=q+s^9py(0q=--1xk(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['euphorie.com', 'www.euphorie.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -155,3 +155,8 @@ except (ImportError, Exception) as e:
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://euphorie.com",
+    "https://www.euphorie.com"
+]

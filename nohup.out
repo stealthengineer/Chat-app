@@ -1,0 +1,5 @@
+2025-03-28 05:46:36,983 INFO     Starting server at tcp:port=8000:interface=0.0.0.0
+2025-03-28 05:46:36,983 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2025-03-28 05:46:36,983 INFO     Configuring endpoint tcp:port=8000:interface=0.0.0.0
+2025-03-28 05:46:36,983 CRITICAL Listen failure: Couldn't listen on 0.0.0.0:8000: [Errno 98] Address already in use.
+Using Redis channel layer for Django Channels
