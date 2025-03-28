@@ -2,16 +2,18 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 from asgiref.sync import sync_to_async
-from .models import Message
+from .models import Message, Room
 
 class ChatConsumer(AsyncWebsocketConsumer):
     room_users = {}
 
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = f'chat_{self.room_name}'
+        self.room_slug = self.scope['url_route']['kwargs']['room_name']
+        self.room = await sync_to_async(Room.objects.get)(name=self.room_slug)
+        self.room_group_name = f'chat_{self.room.name}'
         self.user = self.scope['user']
-        print(f"[CONNECT] room: {self.room_name}, user: {self.user}")
+
+        print(f"[CONNECT] room: {self.room.name}, user: {self.user}")
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -20,19 +22,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         if self.user.is_authenticated:
-            ChatConsumer.room_users.setdefault(self.room_name, set()).add(self.user.username)
+            ChatConsumer.room_users.setdefault(self.room.name, set()).add(self.user.username)
             await self.send_user_list()
 
     async def disconnect(self, close_code):
-        print(f"[DISCONNECT] room: {self.room_name}, user: {self.user}")
+        print(f"[DISCONNECT] room: {self.room.name}, user: {self.user}")
 
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
 
-        if self.user.is_authenticated and self.room_name in ChatConsumer.room_users:
-            ChatConsumer.room_users[self.room_name].discard(self.user.username)
+        if self.user.is_authenticated and self.room.name in ChatConsumer.room_users:
+            ChatConsumer.room_users[self.room.name].discard(self.user.username)
             await self.send_user_list()
 
     async def receive(self, text_data):
@@ -55,7 +57,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             print(f"[RECEIVE] user: {user}, message: {message}")
 
             if user and not isinstance(user, AnonymousUser):
-                await self.save_message(user, self.room_name, message)
+                await self.save_message(user, self.room, message)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -69,7 +71,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'type': 'chat',
-            'message': f"{event['username']}: {event['message']}"
+            'username': event['username'],
+            'message': event['message']
         }))
 
     async def user_typing(self, event):
@@ -89,7 +92,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             {
                 'type': 'user_list',
-                'users': list(ChatConsumer.room_users.get(self.room_name, []))
+                'users': list(ChatConsumer.room_users.get(self.room.name, []))
             }
         )
 

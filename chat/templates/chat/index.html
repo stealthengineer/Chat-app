@@ -1,57 +1,62 @@
-<!-- chat/templates/chat/index.html -->
 <!DOCTYPE html>
 <html lang="en">
+    {% load static %}
 <head>
+  <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
   <meta charset="UTF-8">
-  <title>Enter a Chat Room</title>
-  <!-- ✅ Tailwind CSS -->
+  <title>EUPHORIE Chat 💬</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- ✅ Flowbite CSS -->
+  <!-- Flowbite CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg">
-    <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">💬 Secret Chat Room</h1>
+<body class="bg-gradient-to-br from-purple-600 via-pink-500 to-red-400 min-h-screen flex items-center justify-center text-white">
+
+  <div class="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-xl shadow-2xl w-full max-w-2xl text-white">
+    <h1 class="text-4xl font-extrabold text-center mb-6">💬 Welcome to <span class="text-yellow-300">EUPHORIE</span></h1>
 
     {% if user.is_authenticated %}
-      <h2 class="text-xl text-center mb-6">Welcome, <span class="font-semibold">{{ user.username }}</span>!</h2>
+      <h2 class="text-lg text-center mb-4">👋 Hello, <span class="font-semibold">{{ user.username }}</span>! Ready to chat?</h2>
 
-      <!-- Room entry form -->
-      <form id="room-form" onsubmit="event.preventDefault(); enterRoom();" class="flex gap-2 mb-6">
-        <input id="room-name-input" type="text" placeholder="Room name" required autocomplete="off"
-               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        <button type="submit"
-                class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-          Enter
-        </button>
-      </form>
+        <!-- Create a new room -->
+        <form id="room-form" onsubmit="event.preventDefault(); enterRoom();" class="mb-6">
+            <label for="room-name-input" class="block text-sm font-medium text-gray-700 mb-1">🆕 Create or Enter a Room</label>
+            <div class="flex gap-2">
+            <input id="room-name-input" type="text" placeholder="Room name (e.g. friends-chat)" required
+                    class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            <button type="submit"
+                    class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                🚪 Go
+            </button>
+            </div>
+        </form>
 
-      <!-- Active rooms list -->
-      <h3 class="text-lg font-semibold mb-2">Active Rooms:</h3>
+      <!-- Active Rooms -->
+      <h3 class="text-xl font-semibold mb-3">🔥 Active Rooms:</h3>
       <ul class="space-y-2 mb-6">
         {% for room in active_rooms %}
           <li>
-            <a href="{% url 'room' room.room %}"
-               class="block p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 rounded-lg transition">
-              <span class="font-medium text-blue-700">{{ room.room }}</span>
-              <span class="text-sm text-gray-500">({{ room.message_count }} messages)</span>
+            <a href="{% url 'room' room.name %}"
+               class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-3 rounded-lg transition">
+              🗨️ <span class="font-medium">{{ room.name }}</span>
+              <span class="text-sm text-gray-200">({{ room.message_count }} messages)</span>
             </a>
           </li>
         {% empty %}
-          <li class="text-gray-500">No active rooms yet. Start the conversation!</li>
+          <li class="text-sm text-gray-200">No rooms yet 💤 Create one above!</li>
         {% endfor %}
       </ul>
 
-      <!-- Logout button -->
+      <!-- Logout -->
       <form method="post" action="{% url 'logout' %}" class="text-center">
         {% csrf_token %}
         <button type="submit"
-                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-          Logout
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white font-semibold">
+          🔒 Logout
         </button>
       </form>
 
-      <!-- JS -->
       <script>
         function enterRoom() {
           const roomName = encodeURIComponent(document.getElementById('room-name-input').value);
@@ -60,11 +65,28 @@
       </script>
 
     {% else %}
-      <h2 class="text-center text-lg mb-6">
-        Please <a href="{% url 'login' %}" class="text-blue-600 underline">log in</a>
-        or <a href="{% url 'signup' %}" class="text-blue-600 underline">sign up</a> to chat.
-      </h2>
+      <div class="text-center text-lg">
+        🛑 Please
+        <a href="{% url 'login' %}" class="text-yellow-300 underline font-semibold">log in</a>
+        or
+        <a href="{% url 'signup' %}" class="text-yellow-300 underline font-semibold">sign up</a>
+        to chat.
+      </div>
     {% endif %}
   </div>
+  <script>
+    document.getElementById('room-name-input').focus();
+  </script>
+  <script>
+    function enterRoom() {
+      const rawInput = document.getElementById('room-name-input').value;
+      const slugified = rawInput.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      if (slugified) {
+        window.location.href = `/chat/${slugified}/`;
+      } else {
+        alert("Please enter a valid room name.");
+      }
+    }
+  </script>
 </body>
 </html>

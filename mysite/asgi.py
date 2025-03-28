@@ -1,13 +1,13 @@
+# mysite/asgi.py
 import os
 import django
-from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
+from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-django.setup()  # Add this line if it's missing
+django.setup()
 
-# Import routing after Django is set up
 import chat.routing
 
 application = ProtocolTypeRouter({

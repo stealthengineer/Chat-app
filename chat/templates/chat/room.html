@@ -1,119 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
+    {% load static %}
 <head>
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
   <meta charset="UTF-8">
   <title>Chat Room: {{ room_name }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-3xl p-6 bg-white rounded-xl shadow-lg">
-    <!-- Room Heading -->
-    <div class="mb-6 text-center">
-      <h1 class="text-3xl font-bold text-blue-600">💬 Chat Room: {{ room_name }}</h1>
-      <h2 class="text-lg mt-1 text-gray-700">Welcome, <span class="font-semibold">{{ username }}</span></h2>
+<body class="bg-gradient-to-br from-indigo-100 to-blue-200 min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-3xl bg-white p-6 rounded-2xl shadow-2xl space-y-6">
+
+    <!-- Header -->
+    <div class="text-center">
+      <h1 class="text-4xl font-extrabold text-blue-700">💬 {{ room_name|title }}</h1>
+      <p class="text-lg text-gray-600 mt-2">👋 Welcome, <span class="font-semibold">{{ username }}</span></p>
     </div>
 
-    <!-- Chat History -->
-    <div id="chat-log" class="border border-gray-300 p-4 rounded-lg h-64 overflow-y-scroll bg-gray-50 mb-4 text-sm">
+    <!-- Chat log -->
+    <div id="chat-log" class="bg-gray-100 border rounded-lg p-4 h-64 overflow-y-scroll text-sm space-y-2">
       {% for message in messages %}
         <p><strong>{{ message.user.username }}:</strong> {{ message.content }}</p>
       {% endfor %}
     </div>
 
-    <!-- Typing Indicator -->
-    <p id="typing-indicator" class="text-sm italic text-gray-500 mb-2 h-4"></p>
+    <!-- Typing indicator -->
+    <p id="typing-indicator" class="h-4 text-sm text-gray-500 italic"></p>
 
-    <!-- Chat Input -->
-    <div class="flex gap-2 mb-6">
-      <input id="chat-message-input" type="text" autocomplete="off"
-             placeholder="Type your message..."
-             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <!-- Message input -->
+    <div class="flex gap-2">
+      <input id="chat-message-input"
+             type="text"
+             autocomplete="off"
+             placeholder="Type something cool... ✨"
+             class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
       <button id="chat-message-submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-        Send
+              class="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+        🚀 Send
       </button>
     </div>
 
-    <!-- Online Users -->
-    <div class="mb-6">
-      <h3 class="text-lg font-semibold mb-2">Users in this room:</h3>
-      <ul id="user-list" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    <!-- Active users -->
+    <div>
+      <h3 class="text-lg font-semibold text-gray-700 mb-2">🟢 Users in this room</h3>
+      <ul id="user-list" class="list-disc list-inside text-sm text-gray-800 space-y-1"></ul>
     </div>
 
     <!-- Logout -->
-    <form method="post" action="{% url 'logout' %}" class="text-center">
-      {% csrf_token %}
-      <button type="submit"
-              class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-        Logout
-      </button>
+    <form method="post" action="{% url 'logout' %}" class="text-center mt-4">
+        {% csrf_token %}
+        <button type="submit"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+        🔒 Logout
+        </button>
     </form>
+
+    <!-- Show Delete Button Only to Creator -->
+    {% if can_delete %}
+        <form method="post" action="{% url 'delete_room' room_name %}" class="text-center mt-2">
+        {% csrf_token %}
+        <button type="submit"
+                class="bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded-lg transition font-semibold">
+            🗑️ Delete This Room
+        </button>
+        </form>
+    {% endif %}
   </div>
 
-  <!-- WebSocket JS -->
+  <!-- WebSocket & Chat Script -->
   <script>
     const roomName = "{{ room_name }}";
     const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+      'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
     );
 
-    chatSocket.onopen = () => console.log("✅ WebSocket connected");
-
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        console.log("[WebSocket] message received:", data);
-
-        if (data.type === 'chat') {
-            const chatLog = document.getElementById('chat-log');
-            const newMsg = document.createElement('p');
-            newMsg.textContent = data.message;
-            chatLog.appendChild(newMsg);
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }
-
-        if (data.type === 'users') {
-            const userList = document.getElementById('user-list');
-            userList.innerHTML = '';
-            data.users.forEach(user => {
-                const li = document.createElement('li');
-                li.textContent = user;
-                userList.appendChild(li);
-            });
-        }
-
-        if (data.type === 'typing') {
-            const typingIndicator = document.getElementById('typing-indicator');
-            typingIndicator.textContent = `${data.username} is typing...`;
-
-            clearTimeout(window.typingTimeout);
-            window.typingTimeout = setTimeout(() => {
-                typingIndicator.textContent = '';
-            }, 2000);
-        }
+    chatSocket.onopen = () => {
+      console.log("✅ WebSocket connected");
     };
 
-    // Send message
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        const input = document.querySelector('#chat-message-input');
-        const message = input.value;
+    chatSocket.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+      console.log("📩 Received:", data);
 
-        if (chatSocket.readyState === WebSocket.OPEN && message.trim() !== '') {
-            chatSocket.send(JSON.stringify({ type: 'chat', message: message }));
-            input.value = '';
-        } else if (message.trim() === '') {
-            alert("Cannot send empty message.");
-        } else {
-            alert("WebSocket not connected.");
-        }
+      const chatLog = document.getElementById("chat-log");
+
+      if (data.type === "chat") {
+        const msg = document.createElement("p");
+        msg.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+        chatLog.appendChild(msg);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      if (data.type === "typing") {
+        const typing = document.getElementById("typing-indicator");
+        typing.textContent = `${data.username} is typing...`;
+        clearTimeout(window.typingTimeout);
+        window.typingTimeout = setTimeout(() => typing.textContent = '', 2000);
+      }
+
+      if (data.type === "users") {
+        const userList = document.getElementById("user-list");
+        userList.innerHTML = '';
+        data.users.forEach(user => {
+          const li = document.createElement("li");
+          li.textContent = user;
+          userList.appendChild(li);
+        });
+      }
     };
 
-    // Typing event
-    document.getElementById('chat-message-input').addEventListener('input', function () {
-        if (chatSocket.readyState === WebSocket.OPEN) {
-            chatSocket.send(JSON.stringify({ type: 'typing' }));
-        }
+    chatSocket.onerror = (err) => {
+      console.error("❌ WebSocket error:", err);
+    };
+
+    document.getElementById("chat-message-submit").addEventListener("click", function () {
+      const input = document.getElementById("chat-message-input");
+      const message = input.value.trim();
+
+      if (chatSocket.readyState === WebSocket.OPEN && message !== "") {
+        chatSocket.send(JSON.stringify({
+          type: "chat",
+          message: message
+        }));
+        input.value = "";
+      } else {
+        console.warn("🛑 Message not sent. Socket not open or message empty.");
+      }
+    });
+
+    document.getElementById("chat-message-input").addEventListener("input", function () {
+      if (chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify({ type: "typing" }));
+      }
     });
   </script>
+
 </body>
 </html>
