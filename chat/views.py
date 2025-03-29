@@ -9,9 +9,12 @@ from django.core.paginator import Paginator
 from .models import Message, Room
 
 def index(request):
-    active_rooms = Room.objects.annotate(message_count=Count('messages')).order_by('-message_count')
+    all_rooms = Room.objects.annotate(message_count=Count('messages')).order_by('-message_count')
 
-    # Add display name
+    # Decide how many to initially show
+    limit = 1000 if request.user.is_authenticated else 20
+    active_rooms = all_rooms[:limit]
+
     for room in active_rooms:
         room.display_name = room.name.replace('-', ' ').title()
 
@@ -20,12 +23,17 @@ def index(request):
         'user': request.user
     })
 
+
 def load_more_rooms(request):
     page = int(request.GET.get('page', 1))
-    rooms_qs = Room.objects.annotate(message_count=Count('messages')).order_by('-message_count')
-    paginator = Paginator(rooms_qs, 10)
+    per_page = 10
 
+    offset = 1000 if request.user.is_authenticated else 20
+    rooms_qs = Room.objects.annotate(message_count=Count('messages')).order_by('-message_count')[offset:]
+
+    paginator = Paginator(rooms_qs, per_page)
     rooms = paginator.get_page(page)
+
     room_data = [
         {
             'name': room.name,

@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from chat import views
 
 urlpatterns = [
     path('signup/', views.signup, name='signup'),

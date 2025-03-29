@@ -114,48 +114,41 @@
 
       {% if user.is_authenticated %}
         document.getElementById('room-name-input').focus();
-      {% endif %}
 
-      // Infinite Scroll for Active Rooms
-      let page = 2;
-      let hasNext = true;
-      const loading = document.getElementById("loading");
+        // Infinite Scroll
+        let page = 2;
+        let hasNext = true;
+        const loading = document.getElementById("loading");
 
-      window.addEventListener("scroll", async () => {
-        if (!hasNext || loading.classList.contains("loading")) return;
+        window.addEventListener("scroll", async () => {
+          if (!hasNext || loading.classList.contains("loading")) return;
 
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
-          loading.classList.remove("hidden");
-          loading.classList.add("loading");
+          if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+            loading.classList.remove("hidden");
+            loading.classList.add("loading");
 
-          const response = await fetch(`/load-more-rooms/?page=${page}`);
-          const data = await response.json();
+            const response = await fetch(`/load-more-rooms/?page=${page}`);
+            const data = await response.json();
 
-          const list = document.getElementById("room-list");
-          data.rooms.forEach(room => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-              {% if user.is_authenticated %}
+            const list = document.getElementById("room-list");
+            data.rooms.forEach(room => {
+              const li = document.createElement("li");
+              li.innerHTML = `
                 <a href="/chat/${room.name}/" class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-3 rounded-lg transition">
                   🗨️ <span class="font-medium">${room.display_name}</span>
                   <span class="text-sm text-gray-200">(${room.message_count} messages)</span>
                 </a>
-              {% else %}
-                <a href="/accounts/login/?next=/chat/${room.name}/" class="block bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-3 rounded-lg transition opacity-80 cursor-pointer">
-                  💖 <span class="font-medium">${room.display_name}</span>
-                  <span class="text-sm text-pink-100 italic">(${room.message_count} messages) — log in to join the fun</span>
-                </a>
-              {% endif %}
-            `;
-            list.appendChild(li);
-          });
+              `;
+              list.appendChild(li);
+            });
 
-          hasNext = data.has_next;
-          page += 1;
-          loading.classList.add("hidden");
-          loading.classList.remove("loading");
-        }
-      });
+            hasNext = data.has_next;
+            page += 1;
+            loading.classList.add("hidden");
+            loading.classList.remove("loading");
+          }
+        });
+      {% endif %}
     </script>
   </div>
 </body>
