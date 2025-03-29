@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-    {% load static %}
+{% load static %}
 <head>
   <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
   <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicon-16x16.png' %}">
@@ -9,66 +9,85 @@
   <meta charset="UTF-8">
   <title>EUPHORIE Chat 💬</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Flowbite CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
 </head>
 <body class="bg-gradient-to-br from-purple-600 via-pink-500 to-red-400 min-h-screen flex items-center justify-center text-white">
 
-  <div class="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-xl shadow-2xl w-full max-w-2xl text-white">
-    <h1 class="text-4xl font-extrabold text-center mb-6">💬 Welcome to <span class="text-yellow-300">EUPHORIE</span></h1>
+  <div class="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-xl shadow-2xl w-full max-w-2xl text-white space-y-6">
+
+    <!-- Header -->
+    <h1 class="text-4xl font-extrabold text-center">💬 Welcome to <span class="text-yellow-300">EUPHORIE</span></h1>
+    <p class="text-center text-pink-200 italic text-md">
+      A cozy little corner of the internet to chat, connect, and express yourself 💕
+    </p>
 
     {% if user.is_authenticated %}
-      <h2 class="text-lg text-center mb-4">👋 Hello, <span class="font-semibold">{{ user.username }}</span>! Ready to chat?</h2>
+      <h2 class="text-lg text-center">👋 Hello, <span class="font-semibold">{{ user.username }}</span>! Ready to chat?</h2>
 
-        <!-- Create a new room -->
-        <form id="room-form" onsubmit="event.preventDefault(); enterRoom();" class="mb-6">
-            <label for="room-name-input" class="block text-sm font-medium text-gray-700 mb-1">🆕 Create or Enter a Room</label>
-            <div class="flex gap-2">
-            <input id="room-name-input" type="text" placeholder="Room name (e.g. friends-chat)" required
-                    class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            <button type="submit"
-                    class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                🚪 Go
-            </button>
-            </div>
-        </form>
+      <!-- Create or Enter Room -->
+      <form id="room-form" onsubmit="event.preventDefault(); enterRoom();" class="mb-4">
+        <label for="room-name-input" class="block text-sm font-medium text-white mb-1">🆕 Create or Enter a Room</label>
+        <div class="flex gap-2">
+          <input id="room-name-input" type="text" placeholder="Room name (e.g. book-club)"
+                 required class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            🚪 Go
+          </button>
+        </div>
+      </form>
+    {% endif %}
 
-      <!-- Active Rooms -->
-      <h3 class="text-xl font-semibold mb-3">🔥 Active Rooms:</h3>
-      <ul class="space-y-2 mb-6">
-        {% for room in active_rooms %}
-          <li>
-            <a href="{% url 'room' room.name %}"
-               class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-3 rounded-lg transition">
-              🗨️ <span class="font-medium">{{ room.name }}</span>
+    <!-- Active Rooms -->
+    <h3 class="text-xl font-semibold">🔥 Active Rooms:</h3>
+    <ul id="room-list" class="space-y-2">
+      {% for room in active_rooms %}
+        <li>
+          {% if user.is_authenticated %}
+            <a href="{% url 'room' room.name %}" class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-3 rounded-lg transition">
+              🗨️ <span class="font-medium">{{ room.display_name }}</span>
               <span class="text-sm text-gray-200">({{ room.message_count }} messages)</span>
             </a>
-          </li>
-        {% empty %}
-          <li class="text-sm text-gray-200">No rooms yet 💤 Create one above!</li>
-        {% endfor %}
-      </ul>
+          {% else %}
+            <a href="{% url 'login' %}?next={% url 'room' room.name %}" class="block bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-3 rounded-lg transition opacity-80 cursor-pointer">
+              💖 <span class="font-medium">{{ room.display_name }}</span>
+              <span class="text-sm text-pink-100 italic">({{ room.message_count }} messages) — log in to join the fun</span>
+            </a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
 
-      <!-- Logout -->
-      <form method="post" action="{% url 'logout' %}" class="text-center">
+    <div id="loading" class="text-center text-sm text-pink-100 mt-2 hidden">
+      Loading more rooms...
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="grid gap-4 md:grid-cols-3 mt-8 text-sm text-white text-center">
+      <div class="bg-white bg-opacity-10 p-4 rounded-xl shadow">
+        🌸 <p class="mt-2 font-semibold">Gentle Aesthetic</p>
+        <p>Soft colors and cozy vibes</p>
+      </div>
+      <div class="bg-white bg-opacity-10 p-4 rounded-xl shadow">
+        🔐 <p class="mt-2 font-semibold">Private Rooms</p>
+        <p>Only you and your invited friends</p>
+      </div>
+      <div class="bg-white bg-opacity-10 p-4 rounded-xl shadow">
+        🤖 <p class="mt-2 font-semibold">AI Chatbot Coming Soon</p>
+        <p>Talk to your virtual BFF!</p>
+      </div>
+    </div>
+
+    <!-- Auth Controls -->
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'logout' %}" class="text-center mt-6">
         {% csrf_token %}
-        <button type="submit"
-                class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white font-semibold">
+        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white font-semibold">
           🔒 Logout
         </button>
       </form>
-
-      <script>
-        function enterRoom() {
-          const roomName = encodeURIComponent(document.getElementById('room-name-input').value);
-          window.location.href = `/chat/${roomName}/`;
-        }
-      </script>
-
     {% else %}
-      <div class="text-center text-lg">
+      <div class="text-center text-lg mt-4">
         🛑 Please
         <a href="{% url 'login' %}" class="text-yellow-300 underline font-semibold">log in</a>
         or
@@ -76,20 +95,68 @@
         to chat.
       </div>
     {% endif %}
-  </div>
-  <script>
-    document.getElementById('room-name-input').focus();
-  </script>
-  <script>
-    function enterRoom() {
-      const rawInput = document.getElementById('room-name-input').value;
-      const slugified = rawInput.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      if (slugified) {
-        window.location.href = `/chat/${slugified}/`;
-      } else {
-        alert("Please enter a valid room name.");
+
+    <!-- Footer -->
+    <p class="text-center text-pink-100 italic text-sm mt-4">
+      💖 Euphorie is your safe, sweet space to be yourself. Invite a friend and start chatting!
+    </p>
+
+    <script>
+      function enterRoom() {
+        const rawInput = document.getElementById('room-name-input').value;
+        const slugified = rawInput.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        if (slugified) {
+          window.location.href = `/chat/${slugified}/`;
+        } else {
+          alert("Please enter a valid room name.");
+        }
       }
-    }
-  </script>
+
+      {% if user.is_authenticated %}
+        document.getElementById('room-name-input').focus();
+      {% endif %}
+
+      // Infinite Scroll for Active Rooms
+      let page = 2;
+      let hasNext = true;
+      const loading = document.getElementById("loading");
+
+      window.addEventListener("scroll", async () => {
+        if (!hasNext || loading.classList.contains("loading")) return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+          loading.classList.remove("hidden");
+          loading.classList.add("loading");
+
+          const response = await fetch(`/load-more-rooms/?page=${page}`);
+          const data = await response.json();
+
+          const list = document.getElementById("room-list");
+          data.rooms.forEach(room => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+              {% if user.is_authenticated %}
+                <a href="/chat/${room.name}/" class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-3 rounded-lg transition">
+                  🗨️ <span class="font-medium">${room.display_name}</span>
+                  <span class="text-sm text-gray-200">(${room.message_count} messages)</span>
+                </a>
+              {% else %}
+                <a href="/accounts/login/?next=/chat/${room.name}/" class="block bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-3 rounded-lg transition opacity-80 cursor-pointer">
+                  💖 <span class="font-medium">${room.display_name}</span>
+                  <span class="text-sm text-pink-100 italic">(${room.message_count} messages) — log in to join the fun</span>
+                </a>
+              {% endif %}
+            `;
+            list.appendChild(li);
+          });
+
+          hasNext = data.has_next;
+          page += 1;
+          loading.classList.add("hidden");
+          loading.classList.remove("loading");
+        }
+      });
+    </script>
+  </div>
 </body>
 </html>
